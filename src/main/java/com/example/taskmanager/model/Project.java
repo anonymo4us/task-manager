@@ -17,7 +17,6 @@ public class Project {
 
     private String name;
 
-    //@JsonIgnore
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @ManyToOne
     @JoinColumn(name = "team_id", nullable = false)
