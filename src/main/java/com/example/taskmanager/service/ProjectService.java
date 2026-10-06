@@ -1,5 +1,6 @@
 package com.example.taskmanager.service;
 
+import com.example.taskmanager.exception.ResourceNotFoundException;
 import com.example.taskmanager.model.Project;
 import com.example.taskmanager.repository.ProjectRepository;
 import org.springframework.stereotype.Service;
@@ -22,7 +23,7 @@ public class ProjectService {
 
     public Project findById(UUID id) {
         return projectRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Project not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found: " + id));
     }
 
     public Project save(Project project) {
@@ -31,7 +32,7 @@ public class ProjectService {
 
     public void deleteById(UUID id) {
         if (!projectRepository.existsById(id)) {
-            throw new RuntimeException("Project not found: " + id);
+            throw new ResourceNotFoundException("Project not found: " + id);
         }
         projectRepository.deleteById(id);
     }

@@ -1,5 +1,6 @@
 package com.example.taskmanager.service;
 
+import com.example.taskmanager.exception.ResourceNotFoundException;
 import com.example.taskmanager.model.Team;
 import com.example.taskmanager.repository.TeamRepository;
 import org.springframework.stereotype.Service;
@@ -22,7 +23,7 @@ public class TeamService {
 
     public Team findById(UUID id) {
         return teamRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Team not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Team not found: " + id));
     }
 
     public Team save(Team team) {
@@ -31,7 +32,7 @@ public class TeamService {
 
     public void deleteById(UUID id) {
         if (!teamRepository.existsById(id)) {
-            throw new RuntimeException("Team not found: " + id);
+            throw new ResourceNotFoundException("Team not found: " + id);
         }
         teamRepository.deleteById(id);
     }

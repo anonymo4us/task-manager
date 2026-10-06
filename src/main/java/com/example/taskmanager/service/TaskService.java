@@ -1,5 +1,6 @@
 package com.example.taskmanager.service;
 
+import com.example.taskmanager.exception.ResourceNotFoundException;
 import com.example.taskmanager.model.Task;
 import com.example.taskmanager.repository.TaskRepository;
 import org.springframework.stereotype.Service;
@@ -22,7 +23,7 @@ public class TaskService {
 
     public Task findById(UUID id) {
         return taskRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Task not found: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + id));
     }
 
     public Task save(Task task) {
@@ -31,7 +32,7 @@ public class TaskService {
 
     public void deleteById(UUID id) {
         if (!taskRepository.existsById(id)) {
-            throw new RuntimeException("Task not found: " + id);
+            throw new ResourceNotFoundException("Task not found: " + id);
         }
         taskRepository.deleteById(id);
     }
