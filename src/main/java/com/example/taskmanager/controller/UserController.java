@@ -1,6 +1,7 @@
 package com.example.taskmanager.controller;
 
-import com.example.taskmanager.model.User;
+import com.example.taskmanager.dto.UserCreateRequest;
+import com.example.taskmanager.dto.UserResponse;
 import com.example.taskmanager.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
@@ -19,18 +20,18 @@ public class UserController {
     }
 
     @GetMapping
-    public List<User> findAll() {
+    public List<UserResponse> findAll() {
         return userService.findAll();
     }
 
     @GetMapping("/{id}")
-    public User findById(@PathVariable UUID id) {
+    public UserResponse findById(@PathVariable UUID id) {
         return userService.findById(id);
     }
 
     @PostMapping
-    public User save(@Valid @RequestBody User user) {
-        return userService.save(user);
+    public UserResponse save(@Valid @RequestBody UserCreateRequest request) {
+        return userService.save(request);
     }
 
     @DeleteMapping("/{id}")

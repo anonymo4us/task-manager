@@ -1,7 +1,6 @@
 package com.example.taskmanager.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.util.UUID;
@@ -14,10 +13,8 @@ public class User {
     @UuidGenerator
     private UUID id;
 
-    @NotBlank(message = "Name must not be blank")
     private String name;
 
-    @NotBlank(message = "Department must not be blank")
     private String department;
 
     @ManyToOne
@@ -42,6 +39,14 @@ public class User {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public Team getTeam() {
+        return team;
+    }
+
+    public void setTeam(Team team) {
+        this.team = team;
     }
 
     public String getDepartment() {
