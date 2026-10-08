@@ -1,7 +1,9 @@
 package com.example.taskmanager.controller;
 
-import com.example.taskmanager.model.Team;
+import com.example.taskmanager.dto.TeamCreateRequest;
+import com.example.taskmanager.dto.TeamResponse;
 import com.example.taskmanager.service.TeamService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,18 +20,18 @@ public class TeamController {
     }
 
     @GetMapping
-    public List<Team> findAll() {
+    public List<TeamResponse> findAll() {
         return teamService.findAll();
     }
 
     @GetMapping("/{id}")
-    public Team findById(@PathVariable UUID id) {
+    public TeamResponse findById(@PathVariable UUID id) {
         return teamService.findById(id);
     }
 
     @PostMapping
-    public Team save(@RequestBody Team team) {
-        return teamService.save(team);
+    public TeamResponse save(@Valid @RequestBody TeamCreateRequest request) {
+        return teamService.save(request);
     }
 
     @DeleteMapping("/{id}")
