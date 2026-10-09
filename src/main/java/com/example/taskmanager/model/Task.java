@@ -1,6 +1,5 @@
 package com.example.taskmanager.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import org.hibernate.annotations.UuidGenerator;
 
@@ -20,12 +19,10 @@ public class Task {
 
     private String description;
 
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @ManyToOne
     @JoinColumn(name = "project_id")
     private Project project;
 
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @ManyToMany
     @JoinTable(
             name = "task_assignees",

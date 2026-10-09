@@ -1,7 +1,9 @@
 package com.example.taskmanager.controller;
 
-import com.example.taskmanager.model.Task;
+import com.example.taskmanager.dto.TaskCreateRequest;
+import com.example.taskmanager.dto.TaskResponse;
 import com.example.taskmanager.service.TaskService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,18 +19,18 @@ public class TaskController {
     }
 
     @GetMapping
-    public List<Task> findAll() {
+    public List<TaskResponse> findAll() {
         return taskService.findAll();
     }
 
     @GetMapping("/{id}")
-    public Task findById(@PathVariable UUID id) {
+    public TaskResponse findById(@PathVariable UUID id) {
         return taskService.findById(id);
     }
 
     @PostMapping
-    public Task save(@RequestBody Task task) {
-        return taskService.save(task);
+    public TaskResponse save(@Valid @RequestBody TaskCreateRequest request) {
+        return taskService.save(request);
     }
 
     @DeleteMapping("/{id}")
