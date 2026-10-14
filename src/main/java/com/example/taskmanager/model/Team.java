@@ -1,6 +1,5 @@
 package com.example.taskmanager.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import org.hibernate.annotations.UuidGenerator;
 
@@ -16,15 +15,15 @@ public class Team {
     @UuidGenerator
     private UUID id;
 
+    @Column(name = "team_name", nullable = false)
     private String teamName;
 
+    @Column(nullable = false)
     private String specialization;
 
-    @JsonIgnore
     @OneToMany(mappedBy = "team")
     private Set<User> users = new HashSet<>();
 
-    @JsonIgnore
     @OneToMany(mappedBy = "team")
     private Set<Project> projects = new HashSet<>();
 

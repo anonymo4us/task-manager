@@ -1,28 +1,28 @@
 spring:
-  flyway:
-    validate-migration-naming: true
-  application:
-    name: task-manager
+    application:
+      name: task-manager
 
-  datasource:
-    url: jdbc:postgresql://127.0.0.1:5433/task_manager
-    username: task_manager
-    password: task_manager
-    driver-class-name: org.postgresql.Driver
+    flyway:
+      validate-migration-naming: true
 
-  jpa:
-    open-in-view: false
-    hibernate:
-      ddl-auto: validate         # ??? dev; ? prod ? validate ??? none
-    show-sql: true
-    properties:
+    datasource:
+      url: jdbc:postgresql://127.0.0.1:5433/task_manager
+      username: task_manager
+      password: task_manager
+      driver-class-name: org.postgresql.Driver
+
+    jpa:
+      open-in-view: false
       hibernate:
-        format_sql: true
+        ddl-auto: validate
+      properties:
+        hibernate:
+          format_sql: true
 
 server:
-  port: 8080
+    port: 8080
 
 logging:
-  level:
-    org.hibernate.SQL: debug
-    org.hibernate.orm.jdbc.bind: trace   # ?????????? ???????? ?????????? ? SQL
+    level:
+      org.hibernate.SQL: debug
+      org.hibernate.orm.jdbc.bind: trace

@@ -10,6 +10,7 @@ import com.example.taskmanager.model.User;
 import com.example.taskmanager.repository.ProjectRepository;
 import com.example.taskmanager.repository.TaskRepository;
 import com.example.taskmanager.repository.UserRepository;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
@@ -34,6 +35,7 @@ public class TaskService {
     }
 
 
+    @Transactional(readOnly = true)
     public List<TaskResponse> findAll() {
         return taskRepository.findAll()
                 .stream()
@@ -41,18 +43,30 @@ public class TaskService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public TaskResponse findById(UUID id) {
-        return taskRepository.findById(id)
-                .map(taskMapper::toResponse)
+        Task task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + id));
+        return taskMapper.toResponse(task);
     }
 
+    @Transactional
     public TaskResponse save(TaskCreateRequest request) {
         Project project = resolveProject(request.projectId());
         Set<User> users = resolveAssignees(request.assigneeIds());
+
         Task task = taskMapper.toEntity(request, project, users);
         Task savedTask = taskRepository.save(task);
+
         return taskMapper.toResponse(savedTask);
+    }
+
+    @Transactional
+    public void deleteById(UUID id) {
+        if (!taskRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Task not found: " + id);
+        }
+        taskRepository.deleteById(id);
     }
 
     private Project resolveProject(UUID projectId) {
@@ -64,7 +78,7 @@ public class TaskService {
 
     private Set<User> resolveAssignees(Set<UUID> assigneeIds) {
         if (assigneeIds == null || assigneeIds.isEmpty()) {
-            return Set.of();
+            return new HashSet<>();
         }
         List<User> users = userRepository.findAllById(assigneeIds);
 
@@ -77,12 +91,5 @@ public class TaskService {
         }
 
         return new HashSet<>(users);
-    }
-
-    public void deleteById(UUID id) {
-        if (!taskRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Task not found: " + id);
-        }
-        taskRepository.deleteById(id);
     }
 }

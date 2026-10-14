@@ -15,24 +15,22 @@ public class Task {
     @UuidGenerator
     private UUID id;
 
+    @Column(nullable = false)
     private String title;
 
     private String description;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id")
     private Project project;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "task_assignees",
             joinColumns = @JoinColumn(name = "task_id"),
             inverseJoinColumns = @JoinColumn(name = "user_id")
     )
     private Set<User> assignees = new HashSet<>();
-
-    public Task() {
-    }
 
     public UUID getId() {
         return id;
