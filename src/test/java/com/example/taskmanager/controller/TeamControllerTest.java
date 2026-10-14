@@ -213,7 +213,7 @@ class TeamControllerTest {
 
         // Act & Assert
         mockMvc.perform(delete("/api/teams/{id}", teamId))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
 
         verify(teamService).deleteById(teamId);
     }

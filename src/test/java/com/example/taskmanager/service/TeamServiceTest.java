@@ -2,6 +2,7 @@ package com.example.taskmanager.service;
 
 import com.example.taskmanager.dto.TeamCreateRequest;
 import com.example.taskmanager.dto.TeamResponse;
+import com.example.taskmanager.exception.ResourceConflictException;
 import com.example.taskmanager.exception.ResourceNotFoundException;
 import com.example.taskmanager.mapper.TeamMapper;
 import com.example.taskmanager.model.Team;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.util.List;
 import java.util.Optional;
@@ -173,32 +175,51 @@ class TeamServiceTest {
     void deleteById_whenTeamExists_deletesTeam() {
         // Arrange
         UUID teamId = UUID.randomUUID();
+        Team team = new Team();
+        team.setId(teamId);
 
-        when(teamRepository.existsById(teamId))
-                .thenReturn(true);
+        when(teamRepository.findById(teamId))
+                .thenReturn(Optional.of(team));
 
         // Act
         teamService.deleteById(teamId);
 
         // Assert
-        verify(teamRepository).existsById(teamId);
-        verify(teamRepository).deleteById(teamId);
+        verify(teamRepository).findById(teamId);
+        verify(teamRepository).delete(team);
+        verify(teamRepository).flush();
     }
 
     @Test
     void deleteById_whenTeamNotFound_throwsResourceNotFoundException() {
         // Arrange
         UUID teamId = UUID.randomUUID();
-
-        when(teamRepository.existsById(teamId))
-                .thenReturn(false);
+        when(teamRepository.findById(teamId)).thenReturn(Optional.empty());
 
         // Act & Assert
         assertThatThrownBy(() -> teamService.deleteById(teamId))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Team not found: " + teamId);
 
-        verify(teamRepository).existsById(teamId);
-        verify(teamRepository, never()).deleteById(teamId);
+       verify(teamRepository, never()).delete(any());
+        verify(teamRepository, never()).flush();
+    }
+
+    @Test
+    void deleteById_whenFlushThrowsDataIntegrityViolation_throwsResourceConflictException() {
+        UUID teamId = UUID.randomUUID();
+        Team team = new Team();
+        team.setId(teamId);
+
+        when(teamRepository.findById(teamId)).thenReturn(Optional.of(team));
+        doThrow(new DataIntegrityViolationException("FK violation"))
+                .when(teamRepository).flush();
+
+        assertThatThrownBy(() -> teamService.deleteById(teamId))
+                .isInstanceOf(ResourceConflictException.class)
+                .hasMessageContaining("Team " + teamId + " cannot be deleted");
+
+        verify(teamRepository).delete(team);
+        verify(teamRepository).flush();
     }
 }

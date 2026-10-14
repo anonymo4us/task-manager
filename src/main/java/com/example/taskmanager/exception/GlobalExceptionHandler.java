@@ -42,4 +42,14 @@ public class GlobalExceptionHandler {
     ApiError body = new ApiError("Bad Request", "Request body is missing or malformed");
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
   }
+
+  @ExceptionHandler(ResourceConflictException.class)
+  public ResponseEntity<ApiError> handleConflict(ResourceConflictException exception) {
+    ApiError body = new ApiError("Conflict",
+            exception.getMessage());
+
+    return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(body);
+  }
 }

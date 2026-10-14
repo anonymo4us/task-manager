@@ -4,6 +4,7 @@ import com.example.taskmanager.dto.TeamCreateRequest;
 import com.example.taskmanager.dto.TeamResponse;
 import com.example.taskmanager.service.TeamService;
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -35,7 +36,8 @@ public class TeamController {
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable UUID id) {
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
         teamService.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }
