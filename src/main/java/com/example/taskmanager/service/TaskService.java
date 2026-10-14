@@ -16,6 +16,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class TaskService {
@@ -66,9 +67,15 @@ public class TaskService {
             return Set.of();
         }
         List<User> users = userRepository.findAllById(assigneeIds);
-        if (users.size() != assigneeIds.size()) {
+
+        Set<UUID> foundIds = users.stream()
+                .map(User::getId)
+                .collect(Collectors.toSet());
+
+        if (!foundIds.equals(assigneeIds)) {
             throw new ResourceNotFoundException("One or more users not found");
         }
+
         return new HashSet<>(users);
     }
 

@@ -48,7 +48,7 @@ public class ProjectService {
 
     private Team resolveTeam(UUID teamId) {
         return teamRepository.findById(teamId)
-                .orElseThrow(() -> new ResourceNotFoundException("Team not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Team not found: " + teamId));
     }
 
     public void deleteById(UUID id) {
