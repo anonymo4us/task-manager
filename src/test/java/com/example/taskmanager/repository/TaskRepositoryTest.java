@@ -61,7 +61,8 @@ class TaskRepositoryTest {
         Task task = new Task();
         task.setTitle("Work");
         task.setDescription("Java");
-        task.setAssignees(Set.of(savedAlice, savedBob));
+        task.addAssignee(savedAlice);
+        task.addAssignee(savedBob);
 
         Task savedTask = taskRepository.save(task);
 
@@ -111,8 +112,8 @@ class TaskRepositoryTest {
         Task taskWithAssignees = new Task();
         taskWithAssignees.setTitle("Fix N+1");
         taskWithAssignees.setDescription("Uses JOIN FETCH");
-        taskWithAssignees.setAssignees(Set.of(savedAlice, savedBob));
-
+        taskWithAssignees.addAssignee(savedAlice);
+        taskWithAssignees.addAssignee(savedBob);
         Task savedWithAssignees = taskRepository.save(taskWithAssignees);
 
         Task taskWithoutAssignees = new Task();

@@ -18,7 +18,7 @@ public class TaskMapper {
         task.setTitle(request.title());
         task.setDescription(request.description());
         task.setProject(project);
-        task.setAssignees(assignees);
+        assignees.forEach(task::addAssignee);
         return task;
     }
     public TaskResponse toResponse(Task task) {

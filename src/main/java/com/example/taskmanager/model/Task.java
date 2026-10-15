@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -36,10 +37,6 @@ public class Task {
         return id;
     }
 
-    public void setId(UUID id) {
-        this.id = id;
-    }
-
     public String getTitle() {
         return title;
     }
@@ -68,7 +65,11 @@ public class Task {
         return assignees;
     }
 
-    public void setAssignees(Set<User> assignees) {
-        this.assignees = assignees;
+    public void addAssignee(User user) {
+        assignees.add(Objects.requireNonNull(user));
+    }
+
+    public void removeAssignee(User user) {
+        assignees.remove(user);
     }
 }

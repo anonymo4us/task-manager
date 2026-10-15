@@ -59,11 +59,10 @@ class TaskServiceTest {
         assignee.setId(assigneeId);
 
         Task task = new Task();
-        task.setId(taskId);
         task.setTitle("Fix bug");
         task.setDescription("Critical bug in production");
         task.setProject(project);
-        task.setAssignees(new HashSet<>(Set.of(assignee)));
+        task.addAssignee(assignee);
 
         TaskResponse expectedResponse = new TaskResponse(
                 taskId,
@@ -116,16 +115,13 @@ class TaskServiceTest {
         assignee.setId(assigneeId);
 
         Task firstTask = new Task();
-        firstTask.setId(firstTaskId);
         firstTask.setTitle("Fix bug");
         firstTask.setProject(project);
-        firstTask.setAssignees(new HashSet<>(Set.of(assignee)));
+        firstTask.addAssignee(assignee);
 
         Task secondTask = new Task();
-        secondTask.setId(secondTaskId);
         secondTask.setTitle("Write tests");
         secondTask.setProject(null);
-        secondTask.setAssignees(new HashSet<>());
 
         TaskResponse firstResponse = new TaskResponse(
                 firstTaskId, "Fix bug", null, projectId, Set.of(assigneeId)
@@ -178,15 +174,12 @@ class TaskServiceTest {
         taskToSave.setTitle("Fix bug");
         taskToSave.setDescription("Critical bug");
         taskToSave.setProject(null);
-        taskToSave.setAssignees(new HashSet<>());
 
         UUID savedTaskId = UUID.randomUUID();
         Task savedTask = new Task();
-        savedTask.setId(savedTaskId);
         savedTask.setTitle("Fix bug");
         savedTask.setDescription("Critical bug");
         savedTask.setProject(null);
-        savedTask.setAssignees(new HashSet<>());
 
         TaskResponse expectedResponse = new TaskResponse(
                 savedTaskId, "Fix bug", "Critical bug", null, Set.of()
@@ -241,15 +234,14 @@ class TaskServiceTest {
         taskToSave.setTitle("Fix bug");
         taskToSave.setDescription("Critical bug");
         taskToSave.setProject(project);
-        taskToSave.setAssignees(assignees);
+        assignees.forEach(taskToSave::addAssignee);
 
         UUID savedTaskId = UUID.randomUUID();
         Task savedTask = new Task();
-        savedTask.setId(savedTaskId);
         savedTask.setTitle("Fix bug");
         savedTask.setDescription("Critical bug");
         savedTask.setProject(project);
-        savedTask.setAssignees(assignees);
+        assignees.forEach(savedTask::addAssignee);
 
         TaskResponse expectedResponse = new TaskResponse(
                 savedTaskId,
@@ -299,15 +291,12 @@ class TaskServiceTest {
         taskToSave.setTitle("Fix bug");
         taskToSave.setDescription("Critical bug");
         taskToSave.setProject(project);
-        taskToSave.setAssignees(new HashSet<>());
 
         UUID savedTaskId = UUID.randomUUID();
         Task savedTask = new Task();
-        savedTask.setId(savedTaskId);
         savedTask.setTitle("Fix bug");
         savedTask.setDescription("Critical bug");
         savedTask.setProject(project);
-        savedTask.setAssignees(new HashSet<>());
 
         TaskResponse expectedResponse = new TaskResponse(
                 savedTaskId,
