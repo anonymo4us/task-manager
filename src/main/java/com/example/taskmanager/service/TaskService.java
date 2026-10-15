@@ -37,7 +37,7 @@ public class TaskService {
 
     @Transactional(readOnly = true)
     public List<TaskResponse> findAll() {
-        return taskRepository.findAll()
+        return taskRepository.findAllWithAssignees()
                 .stream()
                 .map(taskMapper::toResponse)
                 .toList();

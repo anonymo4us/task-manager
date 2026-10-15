@@ -136,7 +136,7 @@ class TaskServiceTest {
 
         List<TaskResponse> expectedResponses = List.of(firstResponse, secondResponse);
 
-        when(taskRepository.findAll()).thenReturn(List.of(firstTask, secondTask));
+        when(taskRepository.findAllWithAssignees()).thenReturn(List.of(firstTask, secondTask));
         when(taskMapper.toResponse(firstTask)).thenReturn(firstResponse);
         when(taskMapper.toResponse(secondTask)).thenReturn(secondResponse);
 
@@ -145,7 +145,7 @@ class TaskServiceTest {
 
         // Assert
         assertEquals(expectedResponses, actualResponses);
-        verify(taskRepository).findAll();
+        verify(taskRepository).findAllWithAssignees();
         verify(taskMapper).toResponse(firstTask);
         verify(taskMapper).toResponse(secondTask);
     }
@@ -153,14 +153,14 @@ class TaskServiceTest {
     @Test
     void findAll_whenNoTasksExist_returnsEmptyList() {
         // Arrange
-        when(taskRepository.findAll()).thenReturn(List.of());
+        when(taskRepository.findAllWithAssignees()).thenReturn(List.of());
 
         // Act
         List<TaskResponse> actualResponses = taskService.findAll();
 
         // Assert
         assertTrue(actualResponses.isEmpty());
-        verify(taskRepository).findAll();
+        verify(taskRepository).findAllWithAssignees();
         verifyNoInteractions(taskMapper);
     }
 
