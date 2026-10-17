@@ -4,6 +4,7 @@ import com.example.taskmanager.model.Project;
 import com.example.taskmanager.model.Task;
 import com.example.taskmanager.model.Team;
 import com.example.taskmanager.model.User;
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceUnit;
 import org.hibernate.SessionFactory;
@@ -21,7 +22,9 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DataJpaTest
+@DataJpaTest(properties = {
+        "spring.jpa.properties.hibernate.generate_statistics=true"
+})
 @Testcontainers
 class TaskRepositoryTest {
 
@@ -36,6 +39,9 @@ class TaskRepositoryTest {
 
     @Autowired
     private ProjectRepository projectRepository;
+
+    @Autowired
+    private EntityManager entityManager;
 
     @PersistenceUnit
     private EntityManagerFactory entityManagerFactory;
@@ -213,5 +219,64 @@ class TaskRepositoryTest {
                 .hasSize(1)
                 .extracting(User::getId)
                 .containsExactly(savedUser.getId());
+    }
+
+    @Test
+    void findAllWithAssigneesAndProject_shouldExecuteExpectedNumberOfQueries() {
+        Team team = new Team();
+        team.setTeamName("Backend");
+        team.setSpecialization("Java");
+        Team savedTeam = teamRepository.save(team);
+
+        Project project = new Project();
+        project.setName("Task Manager");
+        project.setTeam(savedTeam);
+        Project savedProject = projectRepository.save(project);
+
+        User alice = new User();
+        alice.setName("Alice");
+        alice.setDepartment("Backend");
+        User savedAlice = userRepository.save(alice);
+
+        User bob = new User();
+        bob.setName("Bob");
+        bob.setDepartment("QA");
+        User savedBob = userRepository.save(bob);
+
+        for (int i = 0; i < 3; i++) {
+            Task task = new Task();
+            task.setTitle("Task " + i);
+            task.setProject(savedProject);
+            task.addAssignee(savedAlice);
+            task.addAssignee(savedBob);
+            taskRepository.save(task);
+        }
+
+        entityManager.flush();
+        entityManager.clear();
+
+        Statistics statistics = entityManagerFactory
+                .unwrap(SessionFactory.class)
+                .getStatistics();
+        statistics.clear();
+
+        // Act
+        List<Task> result = taskRepository.findAllWithAssigneesAndProject();
+
+        long queryCount = statistics.getPrepareStatementCount();
+        System.out.println("SQL queries executed by findAllWithAssigneesAndProject: " + queryCount);
+
+        assertThat(queryCount).isEqualTo(1);
+        assertThat(result).hasSize(3);
+        assertThat(result).allSatisfy(task -> {
+            assertThat(task.getProject()).isNotNull();
+            assertThat(task.getProject().getName()).isEqualTo("Task Manager");
+
+            assertThat(task.getAssignees())
+                    .hasSize(2)
+                    .extracting(User::getName)
+                    .containsExactlyInAnyOrder("Alice", "Bob");
+        });
+        assertThat(statistics.getPrepareStatementCount()).isEqualTo(1);
     }
 }
