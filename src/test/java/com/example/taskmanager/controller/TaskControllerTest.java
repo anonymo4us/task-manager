@@ -160,7 +160,7 @@ class TaskControllerTest {
         mockMvc.perform(post("/api/tasks")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestJson))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(taskId.toString()))
                 .andExpect(jsonPath("$.title").value("Fix bug"))
                 .andExpect(jsonPath("$.description").value("Critical bug"))
@@ -203,7 +203,7 @@ class TaskControllerTest {
         mockMvc.perform(post("/api/tasks")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(requestJson))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(taskId.toString()))
                 .andExpect(jsonPath("$.title").value("Fix bug"))
                 .andExpect(jsonPath("$.assigneeIds.length()").value(0));
@@ -320,7 +320,7 @@ class TaskControllerTest {
 
         // Act & Assert
         mockMvc.perform(delete("/api/tasks/{id}", taskId))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent());
 
         verify(taskService).deleteById(taskId);
     }

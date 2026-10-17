@@ -4,6 +4,8 @@ import com.example.taskmanager.dto.TaskCreateRequest;
 import com.example.taskmanager.dto.TaskResponse;
 import com.example.taskmanager.service.TaskService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,12 +31,15 @@ public class TaskController {
     }
 
     @PostMapping
-    public TaskResponse save(@Valid @RequestBody TaskCreateRequest request) {
-        return taskService.save(request);
+    public ResponseEntity<TaskResponse> save(
+            @Valid @RequestBody TaskCreateRequest request) {
+        TaskResponse response = taskService.save(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable UUID id) {
+    public ResponseEntity<Void> delete(@PathVariable UUID id) {
         taskService.deleteById(id);
+        return ResponseEntity.noContent().build();
     }
 }
