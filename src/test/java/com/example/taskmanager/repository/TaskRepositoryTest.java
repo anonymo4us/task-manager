@@ -1,7 +1,13 @@
 package com.example.taskmanager.repository;
 
+import com.example.taskmanager.model.Project;
 import com.example.taskmanager.model.Task;
+import com.example.taskmanager.model.Team;
 import com.example.taskmanager.model.User;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.PersistenceUnit;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -11,9 +17,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -26,6 +30,15 @@ class TaskRepositoryTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private TeamRepository teamRepository;
+
+    @Autowired
+    private ProjectRepository projectRepository;
+
+    @PersistenceUnit
+    private EntityManagerFactory entityManagerFactory;
 
     @Container
     static PostgreSQLContainer<?> postgres =
@@ -40,7 +53,7 @@ class TaskRepositoryTest {
 
     @Test
     void findAllWithAssignees_shouldReturnEmptyListWhenNoTasksExist() {
-        List<Task> result = taskRepository.findAllWithAssignees();
+        List<Task> result = taskRepository.findAllWithAssigneesAndProject();
 
         assertThat(result).isEmpty();
     }
@@ -66,7 +79,7 @@ class TaskRepositoryTest {
 
         Task savedTask = taskRepository.save(task);
 
-        List<Task> result = taskRepository.findAllWithAssignees();
+        List<Task> result = taskRepository.findAllWithAssigneesAndProject();
 
         assertThat(result).hasSize(1);
 
@@ -86,7 +99,7 @@ class TaskRepositoryTest {
         task.setTitle("WoW");
         Task savedTask = taskRepository.save(task);
 
-        List<Task> result = taskRepository.findAllWithAssignees();
+        List<Task> result = taskRepository.findAllWithAssigneesAndProject();
 
         assertThat(result).hasSize(1);
         Task loaded = result.get(0);
@@ -122,7 +135,7 @@ class TaskRepositoryTest {
 
         Task savedWithoutAssignees = taskRepository.save(taskWithoutAssignees);
 
-        List<Task> result = taskRepository.findAllWithAssignees();
+        List<Task> result = taskRepository.findAllWithAssigneesAndProject();
 
         assertThat(result).hasSize(2);
 
@@ -148,5 +161,57 @@ class TaskRepositoryTest {
                 .containsExactlyInAnyOrder(savedAlice.getId(), savedBob.getId());
 
         assertThat(loadedWithoutAssignees.getAssignees()).isEmpty();
+    }
+
+    @Test
+    void findByIdWithAssigneesAndProject_shouldLoadTaskWithRelations() {
+        // Arrange
+        Team team = new Team();
+        team.setTeamName("Backend");
+        team.setSpecialization("Java");
+        Team savedTeam = teamRepository.save(team);
+
+        Project project = new Project();
+        project.setName("Task Manager");
+        project.setTeam(savedTeam);
+        Project savedProject = projectRepository.save(project);
+
+        User user = new User();
+        user.setName("Alice");
+        user.setDepartment("Backend");
+        User savedUser = userRepository.save(user);
+
+        Task task = new Task();
+        task.setTitle("Fix N+1");
+        task.setDescription("Replace lazy loading with JOIN FETCH");
+        task.setProject(savedProject);
+        task.addAssignee(savedUser);
+        Task savedTask = taskRepository.save(task);
+
+        // Act
+        Task loaded = taskRepository
+                .findByIdWithAssigneesAndProject(savedTask.getId())
+                .orElseThrow();
+
+        // Assert: данные задачи
+        assertThat(loaded.getId()).isEqualTo(savedTask.getId());
+        assertThat(loaded.getTitle()).isEqualTo("Fix N+1");
+
+        // Assert: связи загружены
+        var persistenceUnitUtil = entityManagerFactory.getPersistenceUnitUtil();
+
+        assertThat(persistenceUnitUtil.isLoaded(loaded, "project")).isTrue();
+        assertThat(persistenceUnitUtil.isLoaded(loaded, "assignees")).isTrue();
+
+        // Assert: данные проекта
+        assertThat(loaded.getProject()).isNotNull();
+        assertThat(loaded.getProject().getId()).isEqualTo(savedProject.getId());
+        assertThat(loaded.getProject().getName()).isEqualTo("Task Manager");
+
+        // Assert: данные исполнителей
+        assertThat(loaded.getAssignees())
+                .hasSize(1)
+                .extracting(User::getId)
+                .containsExactly(savedUser.getId());
     }
 }

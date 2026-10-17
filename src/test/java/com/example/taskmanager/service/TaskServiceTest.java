@@ -132,7 +132,7 @@ class TaskServiceTest {
 
         List<TaskResponse> expectedResponses = List.of(firstResponse, secondResponse);
 
-        when(taskRepository.findAllWithAssignees()).thenReturn(List.of(firstTask, secondTask));
+        when(taskRepository.findAllWithAssigneesAndProject()).thenReturn(List.of(firstTask, secondTask));
         when(taskMapper.toResponse(firstTask)).thenReturn(firstResponse);
         when(taskMapper.toResponse(secondTask)).thenReturn(secondResponse);
 
@@ -141,7 +141,7 @@ class TaskServiceTest {
 
         // Assert
         assertEquals(expectedResponses, actualResponses);
-        verify(taskRepository).findAllWithAssignees();
+        verify(taskRepository).findAllWithAssigneesAndProject();
         verify(taskMapper).toResponse(firstTask);
         verify(taskMapper).toResponse(secondTask);
     }
@@ -149,14 +149,14 @@ class TaskServiceTest {
     @Test
     void findAll_whenNoTasksExist_returnsEmptyList() {
         // Arrange
-        when(taskRepository.findAllWithAssignees()).thenReturn(List.of());
+        when(taskRepository.findAllWithAssigneesAndProject()).thenReturn(List.of());
 
         // Act
         List<TaskResponse> actualResponses = taskService.findAll();
 
         // Assert
         assertTrue(actualResponses.isEmpty());
-        verify(taskRepository).findAllWithAssignees();
+        verify(taskRepository).findAllWithAssigneesAndProject();
         verifyNoInteractions(taskMapper);
     }
 
@@ -425,15 +425,17 @@ class TaskServiceTest {
     void deleteById_whenTaskExists_deletesTask() {
         // Arrange
         UUID taskId = UUID.randomUUID();
+        Task task = new Task();
+        task.setTitle("Fix bug");
 
-        when(taskRepository.existsById(taskId)).thenReturn(true);
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(task));
 
         // Act
         taskService.deleteById(taskId);
 
         // Assert
-        verify(taskRepository).existsById(taskId);
-        verify(taskRepository).deleteById(taskId);
+        verify(taskRepository).findById(taskId);
+        verify(taskRepository).delete(task);
     }
 
     @Test
@@ -441,14 +443,14 @@ class TaskServiceTest {
         // Arrange
         UUID taskId = UUID.randomUUID();
 
-        when(taskRepository.existsById(taskId)).thenReturn(false);
+        when(taskRepository.findById(taskId)).thenReturn(Optional.empty());
 
         // Act & Assert
         assertThatThrownBy(() -> taskService.deleteById(taskId))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Task not found: " + taskId);
 
-        verify(taskRepository).existsById(taskId);
-        verify(taskRepository, never()).deleteById(taskId);
+        verify(taskRepository).findById(taskId);
+        verify(taskRepository, never()).delete(any(Task.class));
     }
 }

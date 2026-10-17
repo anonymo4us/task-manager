@@ -37,7 +37,7 @@ public class TaskService {
 
     @Transactional(readOnly = true)
     public List<TaskResponse> findAll() {
-        return taskRepository.findAllWithAssignees()
+        return taskRepository.findAllWithAssigneesAndProject()
                 .stream()
                 .map(taskMapper::toResponse)
                 .toList();
@@ -63,10 +63,11 @@ public class TaskService {
 
     @Transactional
     public void deleteById(UUID id) {
-        if (!taskRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Task not found: " + id);
-        }
-        taskRepository.deleteById(id);
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Task not found: " + id));
+
+        taskRepository.delete(task);
     }
 
     private Project resolveProject(UUID projectId) {
