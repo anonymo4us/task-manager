@@ -1,7 +1,8 @@
 package com.example.taskmanager.controller;
 
-import com.example.taskmanager.dto.TaskCreateRequest;
-import com.example.taskmanager.dto.TaskResponse;
+import com.example.taskmanager.dto.request.TaskCreateRequest;
+import com.example.taskmanager.dto.request.TaskStatusUpdateRequest;
+import com.example.taskmanager.dto.response.TaskResponse;
 import com.example.taskmanager.service.TaskService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -35,6 +36,14 @@ public class TaskController {
             @Valid @RequestBody TaskCreateRequest request) {
         TaskResponse response = taskService.save(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<TaskResponse> updateStatus(
+            @PathVariable UUID id,
+            @Valid @RequestBody TaskStatusUpdateRequest request) {
+        TaskResponse response = taskService.updateStatus(id, request.status());
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")

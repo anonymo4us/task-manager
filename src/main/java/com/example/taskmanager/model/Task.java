@@ -1,5 +1,7 @@
 package com.example.taskmanager.model;
 
+import com.example.taskmanager.exception.InvalidTaskStatusTransitionException;
+import com.example.taskmanager.status.TaskStatus;
 import jakarta.persistence.*;
 import org.hibernate.annotations.UuidGenerator;
 
@@ -20,6 +22,10 @@ public class Task {
     private String title;
 
     private String description;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TaskStatus status = TaskStatus.TODO;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id")
@@ -51,6 +57,27 @@ public class Task {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public TaskStatus getStatus() {
+        return status;
+    }
+
+    public void changeStatus(TaskStatus newStatus) {
+        Objects.requireNonNull(newStatus, "New status must not be null");
+        if (!canTransitionTo(newStatus)){
+            throw new InvalidTaskStatusTransitionException("Cannot change status from " + status + " to " + newStatus);
+        }
+
+        this.status = newStatus;
+    }
+
+    private boolean canTransitionTo(TaskStatus newStatus) {
+        return switch (status) {
+            case TODO -> newStatus == TaskStatus.IN_PROGRESS;
+            case IN_PROGRESS -> newStatus == TaskStatus.DONE;
+            case DONE -> newStatus == TaskStatus.IN_PROGRESS;
+        };
     }
 
     public Project getProject() {

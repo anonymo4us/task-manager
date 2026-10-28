@@ -1,7 +1,7 @@
 package com.example.taskmanager.controller;
 
-import com.example.taskmanager.dto.ProjectCreateRequest;
-import com.example.taskmanager.dto.ProjectResponse;
+import com.example.taskmanager.dto.request.ProjectCreateRequest;
+import com.example.taskmanager.dto.response.ProjectResponse;
 import com.example.taskmanager.service.ProjectService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;

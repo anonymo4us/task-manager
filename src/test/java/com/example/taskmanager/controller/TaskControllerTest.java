@@ -1,10 +1,12 @@
 package com.example.taskmanager.controller;
 
-import com.example.taskmanager.dto.TaskCreateRequest;
-import com.example.taskmanager.dto.TaskResponse;
+import com.example.taskmanager.dto.request.TaskCreateRequest;
+import com.example.taskmanager.dto.response.TaskResponse;
 import com.example.taskmanager.exception.GlobalExceptionHandler;
+import com.example.taskmanager.exception.InvalidTaskStatusTransitionException;
 import com.example.taskmanager.exception.ResourceNotFoundException;
 import com.example.taskmanager.service.TaskService;
+import com.example.taskmanager.status.TaskStatus;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,9 +23,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -48,6 +48,7 @@ class TaskControllerTest {
                 taskId,
                 "Fix bug",
                 "Critical bug",
+                TaskStatus.TODO,
                 projectId,
                 Set.of(assigneeId)
         );
@@ -93,6 +94,7 @@ class TaskControllerTest {
                 taskId,
                 "Fix bug",
                 "Critical bug",
+                TaskStatus.TODO,
                 projectId,
                 Set.of(assigneeId)
         );
@@ -141,6 +143,7 @@ class TaskControllerTest {
                 taskId,
                 "Fix bug",
                 "Critical bug",
+                TaskStatus.TODO,
                 projectId,
                 Set.of(firstUserId, secondUserId)
         );
@@ -187,6 +190,7 @@ class TaskControllerTest {
                 taskId,
                 "Fix bug",
                 null,
+                TaskStatus.TODO,
                 null,
                 Set.of()
         );
@@ -340,5 +344,113 @@ class TaskControllerTest {
                 .andExpect(jsonPath("$.message").value("Task not found: " + taskId));
 
         verify(taskService).deleteById(taskId);
+    }
+
+    @Test
+    void updateStatus_returnsUpdatedTask() throws Exception {
+        // Arrange
+        UUID taskId = UUID.randomUUID();
+        UUID projectId = UUID.randomUUID();
+        UUID assigneeId = UUID.randomUUID();
+
+        TaskResponse taskResponse = new TaskResponse(
+                taskId,
+                "Fix bug",
+                "Critical bug",
+                TaskStatus.IN_PROGRESS,
+                projectId,
+                Set.of(assigneeId)
+        );
+
+        when(taskService.updateStatus(taskId, TaskStatus.IN_PROGRESS))
+                .thenReturn(taskResponse);
+
+        String requestJson = """
+            {
+              "status": "IN_PROGRESS"
+            }
+            """;
+
+        // Act & Assert
+        mockMvc.perform(patch("/api/tasks/{id}/status", taskId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestJson))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(taskId.toString()))
+                .andExpect(jsonPath("$.title").value("Fix bug"))
+                .andExpect(jsonPath("$.status").value("IN_PROGRESS"));
+
+        verify(taskService).updateStatus(taskId, TaskStatus.IN_PROGRESS);
+    }
+
+    @Test
+    void updateStatus_whenTaskNotFound_returns404() throws Exception {
+        // Arrange
+        UUID taskId = UUID.randomUUID();
+        when(taskService.updateStatus(taskId, TaskStatus.IN_PROGRESS))
+                .thenThrow(new ResourceNotFoundException("Task not found: " + taskId));
+
+        String requestJson = """
+            {
+              "status": "IN_PROGRESS"
+            }
+            """;
+
+        // Act & Assert
+        mockMvc.perform(patch("/api/tasks/{id}/status", taskId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestJson))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("Not Found"))
+                .andExpect(jsonPath("$.message").value("Task not found: " + taskId));
+
+        verify(taskService).updateStatus(taskId, TaskStatus.IN_PROGRESS);
+    }
+
+    @Test
+    void updateStatus_whenTransitionForbidden_returns409() throws Exception {
+        // Arrange
+        UUID taskId = UUID.randomUUID();
+        when(taskService.updateStatus(taskId, TaskStatus.DONE))
+                .thenThrow(new InvalidTaskStatusTransitionException(
+                        "Cannot change status from TODO to DONE"));
+
+        String requestJson = """
+            {
+              "status": "DONE"
+            }
+            """;
+
+        // Act & Assert
+        mockMvc.perform(patch("/api/tasks/{id}/status", taskId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestJson))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error").value("Conflict"))
+                .andExpect(jsonPath("$.message")
+                        .value("Cannot change status from TODO to DONE"));
+
+        verify(taskService).updateStatus(taskId, TaskStatus.DONE);
+    }
+
+    @Test
+    void updateStatus_whenStatusIsNull_returns400() throws Exception {
+        // Arrange
+        UUID taskId = UUID.randomUUID();
+        String requestJson = """
+            {
+              "status": null
+            }
+            """;
+
+        // Act & Assert
+        mockMvc.perform(patch("/api/tasks/{id}/status", taskId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestJson))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Validation Failed"))
+                .andExpect(jsonPath("$.message").value("Status must not be null"));
+
+        verifyNoInteractions(taskService);
     }
 }

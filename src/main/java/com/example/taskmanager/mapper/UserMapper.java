@@ -1,7 +1,7 @@
 package com.example.taskmanager.mapper;
 
-import com.example.taskmanager.dto.UserCreateRequest;
-import com.example.taskmanager.dto.UserResponse;
+import com.example.taskmanager.dto.request.UserCreateRequest;
+import com.example.taskmanager.dto.response.UserResponse;
 import com.example.taskmanager.model.Team;
 import com.example.taskmanager.model.User;
 import org.springframework.stereotype.Component;

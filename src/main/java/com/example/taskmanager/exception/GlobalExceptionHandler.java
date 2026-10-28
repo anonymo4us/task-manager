@@ -52,4 +52,13 @@ public class GlobalExceptionHandler {
             .status(HttpStatus.CONFLICT)
             .body(body);
   }
+
+  @ExceptionHandler(InvalidTaskStatusTransitionException.class)
+  public ResponseEntity<ApiError> handleInvalidStatusTransition(
+          InvalidTaskStatusTransitionException exception) {
+    ApiError body = new ApiError("Conflict", exception.getMessage());
+    return ResponseEntity
+            .status(HttpStatus.CONFLICT)
+            .body(body);
+  }
 }

@@ -1,7 +1,7 @@
 package com.example.taskmanager.service;
 
-import com.example.taskmanager.dto.TaskCreateRequest;
-import com.example.taskmanager.dto.TaskResponse;
+import com.example.taskmanager.dto.request.TaskCreateRequest;
+import com.example.taskmanager.dto.response.TaskResponse;
 import com.example.taskmanager.exception.ResourceNotFoundException;
 import com.example.taskmanager.mapper.TaskMapper;
 import com.example.taskmanager.model.Project;
@@ -10,6 +10,7 @@ import com.example.taskmanager.model.User;
 import com.example.taskmanager.repository.ProjectRepository;
 import com.example.taskmanager.repository.TaskRepository;
 import com.example.taskmanager.repository.UserRepository;
+import com.example.taskmanager.status.TaskStatus;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -92,5 +93,14 @@ public class TaskService {
         }
 
         return new HashSet<>(users);
+    }
+
+    @Transactional
+    public TaskResponse updateStatus(UUID taskId, TaskStatus newStatus) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found: " + taskId));
+
+        task.changeStatus(newStatus);
+        return taskMapper.toResponse(task);
     }
 }

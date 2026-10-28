@@ -1,4 +1,4 @@
-package com.example.taskmanager.dto;
+package com.example.taskmanager.dto.response;
 
 import java.util.UUID;
 

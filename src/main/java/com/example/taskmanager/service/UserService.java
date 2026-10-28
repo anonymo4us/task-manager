@@ -1,7 +1,7 @@
 package com.example.taskmanager.service;
 
-import com.example.taskmanager.dto.UserCreateRequest;
-import com.example.taskmanager.dto.UserResponse;
+import com.example.taskmanager.dto.request.UserCreateRequest;
+import com.example.taskmanager.dto.response.UserResponse;
 import com.example.taskmanager.exception.ResourceNotFoundException;
 import com.example.taskmanager.mapper.UserMapper;
 import com.example.taskmanager.model.Team;

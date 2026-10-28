@@ -4,6 +4,7 @@ import com.example.taskmanager.model.Project;
 import com.example.taskmanager.model.Task;
 import com.example.taskmanager.model.Team;
 import com.example.taskmanager.model.User;
+import com.example.taskmanager.status.TaskStatus;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceUnit;
@@ -278,5 +279,23 @@ class TaskRepositoryTest {
                     .containsExactlyInAnyOrder("Alice", "Bob");
         });
         assertThat(statistics.getPrepareStatementCount()).isEqualTo(1);
+    }
+
+    @Test
+    void save_shouldPersistDefaultStatus() {
+        // Arrange
+        Task task = new Task();
+        task.setTitle("Write migration");
+
+        // Act
+        Task savedTask = taskRepository.save(task);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // Assert
+        Task reloaded = taskRepository.findById(savedTask.getId()).orElseThrow();
+
+        assertThat(reloaded.getStatus()).isEqualTo(TaskStatus.TODO);
     }
 }

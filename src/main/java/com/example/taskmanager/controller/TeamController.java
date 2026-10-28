@@ -1,7 +1,7 @@
 package com.example.taskmanager.controller;
 
-import com.example.taskmanager.dto.TeamCreateRequest;
-import com.example.taskmanager.dto.TeamResponse;
+import com.example.taskmanager.dto.request.TeamCreateRequest;
+import com.example.taskmanager.dto.response.TeamResponse;
 import com.example.taskmanager.service.TeamService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;

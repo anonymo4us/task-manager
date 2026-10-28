@@ -1,8 +1,8 @@
 
 package com.example.taskmanager.controller;
 
-import com.example.taskmanager.dto.TeamCreateRequest;
-import com.example.taskmanager.dto.TeamResponse;
+import com.example.taskmanager.dto.request.TeamCreateRequest;
+import com.example.taskmanager.dto.response.TeamResponse;
 import com.example.taskmanager.exception.GlobalExceptionHandler;
 import com.example.taskmanager.exception.ResourceNotFoundException;
 import com.example.taskmanager.service.TeamService;

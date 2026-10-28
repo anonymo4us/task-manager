@@ -1,7 +1,7 @@
 package com.example.taskmanager.service;
 
-import com.example.taskmanager.dto.TaskCreateRequest;
-import com.example.taskmanager.dto.TaskResponse;
+import com.example.taskmanager.dto.request.TaskCreateRequest;
+import com.example.taskmanager.dto.response.TaskResponse;
 import com.example.taskmanager.exception.ResourceNotFoundException;
 import com.example.taskmanager.mapper.TaskMapper;
 import com.example.taskmanager.model.Project;
@@ -10,6 +10,7 @@ import com.example.taskmanager.model.User;
 import com.example.taskmanager.repository.ProjectRepository;
 import com.example.taskmanager.repository.TaskRepository;
 import com.example.taskmanager.repository.UserRepository;
+import com.example.taskmanager.status.TaskStatus;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -68,6 +69,7 @@ class TaskServiceTest {
                 taskId,
                 "Fix bug",
                 "Critical bug in production",
+                TaskStatus.TODO,
                 projectId,
                 Set.of(assigneeId)
         );
@@ -124,10 +126,10 @@ class TaskServiceTest {
         secondTask.setProject(null);
 
         TaskResponse firstResponse = new TaskResponse(
-                firstTaskId, "Fix bug", null, projectId, Set.of(assigneeId)
+                firstTaskId, "Fix bug", null, TaskStatus.TODO, projectId, Set.of(assigneeId)
         );
         TaskResponse secondResponse = new TaskResponse(
-                secondTaskId, "Write tests", null, null, Set.of()
+                secondTaskId, "Write tests", null, TaskStatus.TODO, null, Set.of()
         );
 
         List<TaskResponse> expectedResponses = List.of(firstResponse, secondResponse);
@@ -182,7 +184,7 @@ class TaskServiceTest {
         savedTask.setProject(null);
 
         TaskResponse expectedResponse = new TaskResponse(
-                savedTaskId, "Fix bug", "Critical bug", null, Set.of()
+                savedTaskId, "Fix bug", "Critical bug", TaskStatus.TODO, null, Set.of()
         );
 
         when(taskMapper.toEntity(request, null, Set.of())).thenReturn(taskToSave);
@@ -247,6 +249,7 @@ class TaskServiceTest {
                 savedTaskId,
                 "Fix bug",
                 "Critical bug",
+                TaskStatus.TODO,
                 projectId,
                 Set.of(firstUserId, secondUserId)
         );
@@ -302,6 +305,7 @@ class TaskServiceTest {
                 savedTaskId,
                 "Fix bug",
                 "Critical bug",
+                TaskStatus.TODO,
                 projectId,
                 Set.of()
         );

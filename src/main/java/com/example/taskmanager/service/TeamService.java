@@ -1,7 +1,7 @@
 package com.example.taskmanager.service;
 
-import com.example.taskmanager.dto.TeamCreateRequest;
-import com.example.taskmanager.dto.TeamResponse;
+import com.example.taskmanager.dto.request.TeamCreateRequest;
+import com.example.taskmanager.dto.response.TeamResponse;
 import com.example.taskmanager.exception.ResourceConflictException;
 import com.example.taskmanager.exception.ResourceNotFoundException;
 import com.example.taskmanager.mapper.TeamMapper;

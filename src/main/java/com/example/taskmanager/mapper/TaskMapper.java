@@ -1,7 +1,7 @@
 package com.example.taskmanager.mapper;
 
-import com.example.taskmanager.dto.TaskCreateRequest;
-import com.example.taskmanager.dto.TaskResponse;
+import com.example.taskmanager.dto.request.TaskCreateRequest;
+import com.example.taskmanager.dto.response.TaskResponse;
 import com.example.taskmanager.model.Project;
 import com.example.taskmanager.model.Task;
 import com.example.taskmanager.model.User;
@@ -26,13 +26,16 @@ public class TaskMapper {
         Set<UUID> userIds = users.stream()
                 .map(User::getId)
                 .collect(Collectors.toSet());
+
         UUID projectId = task.getProject() == null
                 ? null
                 : task.getProject().getId();
+
         return new TaskResponse(
                 task.getId(),
                 task.getTitle(),
                 task.getDescription(),
+                task.getStatus(),
                 projectId,
                 userIds
         );
