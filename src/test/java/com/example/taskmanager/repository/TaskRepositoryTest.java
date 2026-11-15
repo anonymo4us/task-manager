@@ -4,6 +4,7 @@ import com.example.taskmanager.model.Project;
 import com.example.taskmanager.model.Task;
 import com.example.taskmanager.model.Team;
 import com.example.taskmanager.model.User;
+import com.example.taskmanager.specification.TaskSpecification;
 import com.example.taskmanager.status.TaskStatus;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
@@ -13,6 +14,7 @@ import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.junit.jupiter.Container;
@@ -298,4 +300,197 @@ class TaskRepositoryTest {
 
         assertThat(reloaded.getStatus()).isEqualTo(TaskStatus.TODO);
     }
+
+    @Test
+    void findAll_withStatusSpecification_shouldReturnTasksWithMatchingStatus() {
+        // Arrange
+        Task inProgressTask = new Task();
+        inProgressTask.setTitle("In progress task");
+        inProgressTask.changeStatus(TaskStatus.IN_PROGRESS); // TODO -> IN_PROGRESS
+        Task savedInProgress = taskRepository.save(inProgressTask);
+
+        Task todoTask = new Task();
+        todoTask.setTitle("Todo task"); // статус по умолчанию TODO
+        Task savedTodo = taskRepository.save(todoTask);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // Act
+        List<Task> result = taskRepository.findAll(
+                TaskSpecification.hasStatus(TaskStatus.IN_PROGRESS)
+        );
+
+        // Assert
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getId()).isEqualTo(savedInProgress.getId());
+        assertThat(result)
+                .extracting(Task::getId)
+                .doesNotContain(savedTodo.getId());
+    }
+
+    @Test
+    void findAll_withProjectIdSpecification_shouldReturnTasksFromMatchingProject() {
+        // Arrange
+        Team backendTeam = new Team();
+        backendTeam.setTeamName("Backend");
+        backendTeam.setSpecialization("Java");
+        Team savedBackendTeam = teamRepository.save(backendTeam);
+
+        Team qaTeam = new Team();
+        qaTeam.setTeamName("QA");
+        qaTeam.setSpecialization("Testing");
+        Team savedQaTeam = teamRepository.save(qaTeam);
+
+        Project targetProject = new Project();
+        targetProject.setName("Target project");
+        targetProject.setTeam(savedBackendTeam);
+        Project savedTargetProject = projectRepository.save(targetProject);
+
+        Project otherProject = new Project();
+        otherProject.setName("Other project");
+        otherProject.setTeam(savedQaTeam);
+        Project savedOtherProject = projectRepository.save(otherProject);
+
+        Task targetTask = new Task();
+        targetTask.setTitle("Task in target project");
+        targetTask.setProject(savedTargetProject);
+        Task savedTargetTask = taskRepository.save(targetTask);
+
+        Task otherTask = new Task();
+        otherTask.setTitle("Task in other project");
+        otherTask.setProject(savedOtherProject);
+        Task savedOtherTask = taskRepository.save(otherTask);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // Act
+        List<Task> result = taskRepository.findAll(
+                TaskSpecification.hasProjectId(savedTargetProject.getId())
+        );
+
+        // Assert
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getId()).isEqualTo(savedTargetTask.getId());
+        assertThat(result)
+                .extracting(Task::getId)
+                .doesNotContain(savedOtherTask.getId());
+    }
+
+    @Test
+    void findAll_withStatusAndProjectIdSpecifications_shouldReturnMatchingTasks() {
+        // Arrange
+        Team backendTeam = new Team();
+        backendTeam.setTeamName("Backend");
+        backendTeam.setSpecialization("Java");
+        Team savedBackendTeam = teamRepository.save(backendTeam);
+
+        Team qaTeam = new Team();
+        qaTeam.setTeamName("QA");
+        qaTeam.setSpecialization("Testing");
+        Team savedQaTeam = teamRepository.save(qaTeam);
+
+        Project targetProject = new Project();
+        targetProject.setName("Target project");
+        targetProject.setTeam(savedBackendTeam);
+        Project savedTargetProject = projectRepository.save(targetProject);
+
+        Project otherProject = new Project();
+        otherProject.setName("Other project");
+        otherProject.setTeam(savedQaTeam);
+        Project savedOtherProject = projectRepository.save(otherProject);
+
+        Task matchingTask = new Task();
+        matchingTask.setTitle("IN_PROGRESS in target");
+        matchingTask.setProject(savedTargetProject);
+        matchingTask.changeStatus(TaskStatus.IN_PROGRESS);
+        Task savedMatchingTask = taskRepository.save(matchingTask);
+
+        Task inProgressOtherProject = new Task();
+        inProgressOtherProject.setTitle("IN_PROGRESS in other");
+        inProgressOtherProject.setProject(savedOtherProject);
+        inProgressOtherProject.changeStatus(TaskStatus.IN_PROGRESS);
+        Task savedInProgressOther = taskRepository.save(inProgressOtherProject);
+
+        Task todoTargetProject = new Task();
+        todoTargetProject.setTitle("TODO in target");
+        todoTargetProject.setProject(savedTargetProject);
+        Task savedTodoTarget = taskRepository.save(todoTargetProject);
+
+        Task todoOtherProject = new Task();
+        todoOtherProject.setTitle("TODO in other");
+        todoOtherProject.setProject(savedOtherProject);
+        Task savedTodoOther = taskRepository.save(todoOtherProject);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // Act
+        Specification<Task> specification =
+                TaskSpecification.hasStatus(TaskStatus.IN_PROGRESS)
+                        .and(TaskSpecification.hasProjectId(savedTargetProject.getId()));
+
+        List<Task> result = taskRepository.findAll(specification);
+
+        // Assert
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getId()).isEqualTo(savedMatchingTask.getId());
+        assertThat(result)
+                .extracting(Task::getId)
+                .doesNotContain(
+                        savedInProgressOther.getId(),
+                        savedTodoTarget.getId(),
+                        savedTodoOther.getId()
+                );
+    }
+
+    @Test
+    void findAll_withSpecifications_whenNoTasksMatch_shouldReturnEmptyList() {
+        // Arrange
+        Team backendTeam = new Team();
+        backendTeam.setTeamName("Backend");
+        backendTeam.setSpecialization("Java");
+        Team savedBackendTeam = teamRepository.save(backendTeam);
+
+        Team qaTeam = new Team();
+        qaTeam.setTeamName("QA");
+        qaTeam.setSpecialization("Testing");
+        Team savedQaTeam = teamRepository.save(qaTeam);
+
+        Project targetProject = new Project();
+        targetProject.setName("Target project");
+        targetProject.setTeam(savedBackendTeam);
+        Project savedTargetProject = projectRepository.save(targetProject);
+
+        Project otherProject = new Project();
+        otherProject.setName("Other project");
+        otherProject.setTeam(savedQaTeam);
+        Project savedOtherProject = projectRepository.save(otherProject);
+
+        Task todoInTargetProject = new Task();
+        todoInTargetProject.setTitle("TODO in target");
+        todoInTargetProject.setProject(savedTargetProject);
+        taskRepository.save(todoInTargetProject);
+
+        Task inProgressInOtherProject = new Task();
+        inProgressInOtherProject.setTitle("IN_PROGRESS in other");
+        inProgressInOtherProject.setProject(savedOtherProject);
+        inProgressInOtherProject.changeStatus(TaskStatus.IN_PROGRESS);
+        taskRepository.save(inProgressInOtherProject);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // Act
+        Specification<Task> specification =
+                TaskSpecification.hasStatus(TaskStatus.IN_PROGRESS)
+                        .and(TaskSpecification.hasProjectId(savedTargetProject.getId()));
+
+        List<Task> result = taskRepository.findAll(specification);
+
+        // Assert
+        assertThat(result).isEmpty();
+    }
+
 }

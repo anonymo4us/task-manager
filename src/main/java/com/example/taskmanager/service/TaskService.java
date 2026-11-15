@@ -10,7 +10,9 @@ import com.example.taskmanager.model.User;
 import com.example.taskmanager.repository.ProjectRepository;
 import com.example.taskmanager.repository.TaskRepository;
 import com.example.taskmanager.repository.UserRepository;
+import com.example.taskmanager.specification.TaskSpecification;
 import com.example.taskmanager.status.TaskStatus;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -39,6 +41,24 @@ public class TaskService {
     @Transactional(readOnly = true)
     public List<TaskResponse> findAll() {
         return taskRepository.findAllWithAssigneesAndProject()
+                .stream()
+                .map(taskMapper::toResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<TaskResponse> findAll(TaskStatus status, UUID projectId) {
+        Specification<Task> specification = Specification.unrestricted();
+
+        if (status != null) {
+            specification = specification.and(TaskSpecification.hasStatus(status));
+        }
+
+        if (projectId != null) {
+            specification = specification.and(TaskSpecification.hasProjectId(projectId));
+        }
+
+        return taskRepository.findAll(specification)
                 .stream()
                 .map(taskMapper::toResponse)
                 .toList();

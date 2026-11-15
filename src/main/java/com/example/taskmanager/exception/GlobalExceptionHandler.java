@@ -7,6 +7,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.stream.Collectors;
 
@@ -59,6 +60,20 @@ public class GlobalExceptionHandler {
     ApiError body = new ApiError("Conflict", exception.getMessage());
     return ResponseEntity
             .status(HttpStatus.CONFLICT)
+            .body(body);
+  }
+
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  public ResponseEntity<ApiError> handleTypeMismatch(
+          MethodArgumentTypeMismatchException exception) {
+
+    ApiError body = new ApiError(
+            "Bad Request",
+            "Invalid parameter: " + exception.getName()
+    );
+
+    return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
             .body(body);
   }
 }

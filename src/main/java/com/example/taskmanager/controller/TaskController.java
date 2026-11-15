@@ -4,6 +4,7 @@ import com.example.taskmanager.dto.request.TaskCreateRequest;
 import com.example.taskmanager.dto.request.TaskStatusUpdateRequest;
 import com.example.taskmanager.dto.response.TaskResponse;
 import com.example.taskmanager.service.TaskService;
+import com.example.taskmanager.status.TaskStatus;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,8 +23,10 @@ public class TaskController {
     }
 
     @GetMapping
-    public List<TaskResponse> findAll() {
-        return taskService.findAll();
+    public List<TaskResponse> findAll(
+            @RequestParam(required = false)TaskStatus status,
+            @RequestParam(required = false)UUID projectId) {
+        return taskService.findAll(status, projectId);
     }
 
     @GetMapping("/{id}")

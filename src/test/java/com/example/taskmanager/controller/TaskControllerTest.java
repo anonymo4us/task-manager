@@ -53,7 +53,7 @@ class TaskControllerTest {
                 Set.of(assigneeId)
         );
 
-        when(taskService.findAll()).thenReturn(List.of(taskResponse));
+        when(taskService.findAll(null, null)).thenReturn(List.of(taskResponse));
 
         // Act & Assert
         mockMvc.perform(get("/api/tasks"))
@@ -66,13 +66,13 @@ class TaskControllerTest {
                 .andExpect(jsonPath("$[0].assigneeIds.length()").value(1))
                 .andExpect(jsonPath("$[0].assigneeIds[0]").value(assigneeId.toString()));
 
-        verify(taskService).findAll();
+        verify(taskService).findAll(null, null);
     }
 
     @Test
     void findAll_returnsEmptyList() throws Exception {
         // Arrange
-        when(taskService.findAll()).thenReturn(List.of());
+        when(taskService.findAll(null, null)).thenReturn(List.of());
 
         // Act & Assert
         mockMvc.perform(get("/api/tasks"))
@@ -80,7 +80,7 @@ class TaskControllerTest {
                 .andExpect(jsonPath("$").isArray())
                 .andExpect(jsonPath("$.length()").value(0));
 
-        verify(taskService).findAll();
+        verify(taskService).findAll(null, null);
     }
 
     @Test
@@ -452,5 +452,103 @@ class TaskControllerTest {
                 .andExpect(jsonPath("$.message").value("Status must not be null"));
 
         verifyNoInteractions(taskService);
+    }
+
+    @Test
+    void findAll_withStatusOnly_passesStatusAndNullProjectId() throws Exception {
+        // Arrange
+        UUID taskId = UUID.randomUUID();
+
+        TaskResponse taskResponse = new TaskResponse(
+                taskId, "In progress task", null,
+                TaskStatus.IN_PROGRESS, null, Set.of()
+        );
+
+        when(taskService.findAll(TaskStatus.IN_PROGRESS, null))
+                .thenReturn(List.of(taskResponse));
+
+        // Act & Assert
+        mockMvc.perform(get("/api/tasks")
+                        .param("status", "IN_PROGRESS"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").value(taskId.toString()))
+                .andExpect(jsonPath("$[0].status").value("IN_PROGRESS"));
+
+        verify(taskService).findAll(TaskStatus.IN_PROGRESS, null);
+        verifyNoMoreInteractions(taskService);
+    }
+
+    @Test
+    void findAll_withProjectIdOnly_passesNullStatusAndProjectId() throws Exception {
+        // Arrange
+        UUID taskId = UUID.randomUUID();
+        UUID projectId = UUID.randomUUID();
+
+        TaskResponse taskResponse = new TaskResponse(
+                taskId, "Task in project", null,
+                TaskStatus.TODO, projectId, Set.of()
+        );
+
+        when(taskService.findAll(null, projectId))
+                .thenReturn(List.of(taskResponse));
+
+        // Act & Assert
+        mockMvc.perform(get("/api/tasks")
+                        .param("projectId", projectId.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").value(taskId.toString()))
+                .andExpect(jsonPath("$[0].projectId").value(projectId.toString()));
+
+        verify(taskService).findAll(null, projectId);
+        verifyNoMoreInteractions(taskService);
+    }
+
+    @Test
+    void findAll_withBothFilters_passesStatusAndProjectId() throws Exception {
+        // Arrange
+        UUID taskId = UUID.randomUUID();
+        UUID projectId = UUID.randomUUID();
+        UUID assigneeId = UUID.randomUUID();
+
+        TaskResponse taskResponse = new TaskResponse(
+                taskId, "Matching task", "Desc",
+                TaskStatus.IN_PROGRESS, projectId, Set.of(assigneeId)
+        );
+
+        when(taskService.findAll(TaskStatus.IN_PROGRESS, projectId))
+                .thenReturn(List.of(taskResponse));
+
+        // Act & Assert
+        mockMvc.perform(get("/api/tasks")
+                        .param("status", "IN_PROGRESS")
+                        .param("projectId", projectId.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").value(taskId.toString()))
+                .andExpect(jsonPath("$[0].status").value("IN_PROGRESS"))
+                .andExpect(jsonPath("$[0].projectId").value(projectId.toString()));
+
+        verify(taskService).findAll(TaskStatus.IN_PROGRESS, projectId);
+        verifyNoMoreInteractions(taskService);
+    }
+
+    @Test
+    void findAll_withInvalidStatus_shouldReturnBadRequest() throws Exception {
+        mockMvc.perform(get("/api/tasks")
+                        .param("status", "UNKNOWN"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Invalid parameter: status"));
+    }
+
+    @Test
+    void findAll_withInvalidProjectId_shouldReturnBadRequest() throws Exception {
+        mockMvc.perform(get("/api/tasks")
+                        .param("projectId", "invalid-uuid"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Invalid parameter: projectId"));
     }
 }

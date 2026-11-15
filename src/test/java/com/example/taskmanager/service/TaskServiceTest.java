@@ -13,9 +13,11 @@ import com.example.taskmanager.repository.UserRepository;
 import com.example.taskmanager.status.TaskStatus;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.util.HashSet;
 import java.util.List;
@@ -457,4 +459,207 @@ class TaskServiceTest {
         verify(taskRepository).findById(taskId);
         verify(taskRepository, never()).delete(any(Task.class));
     }
+
+    @Test
+    void findAll_withoutFilters_shouldReturnAllTasks() {
+        // Arrange
+        UUID projectId = UUID.randomUUID();
+        UUID assigneeId = UUID.randomUUID();
+
+        Project project = new Project();
+        project.setId(projectId);
+
+        User assignee = new User();
+        assignee.setId(assigneeId);
+
+        Task firstTask = new Task();
+        firstTask.setTitle("Fix bug");
+        firstTask.setProject(project);
+        firstTask.addAssignee(assignee);
+
+        Task secondTask = new Task();
+        secondTask.setTitle("Write tests");
+
+        TaskResponse firstResponse = new TaskResponse(
+                UUID.randomUUID(), "Fix bug", null,
+                TaskStatus.TODO, projectId, Set.of(assigneeId)
+        );
+        TaskResponse secondResponse = new TaskResponse(
+                UUID.randomUUID(), "Write tests", null,
+                TaskStatus.TODO, null, Set.of()
+        );
+
+        when(taskRepository.findAll(ArgumentMatchers.<Specification<Task>>any()))
+                .thenReturn(List.of(firstTask, secondTask));
+        when(taskMapper.toResponse(firstTask)).thenReturn(firstResponse);
+        when(taskMapper.toResponse(secondTask)).thenReturn(secondResponse);
+
+        // Act
+        List<TaskResponse> actualResponses = taskService.findAll(null, null);
+
+        // Assert
+        assertEquals(List.of(firstResponse, secondResponse), actualResponses);
+        verify(taskRepository).findAll(ArgumentMatchers.<Specification<Task>>any());
+        verify(taskMapper).toResponse(firstTask);
+        verify(taskMapper).toResponse(secondTask);
+    }
+
+    @Test
+    void findAll_withStatusFilter_shouldReturnTasksWithMatchingStatus() {
+        // Arrange
+        UUID projectId = UUID.randomUUID();
+        UUID assigneeId = UUID.randomUUID();
+
+        Project project = new Project();
+        project.setId(projectId);
+
+        User assignee = new User();
+        assignee.setId(assigneeId);
+
+        Task matchingTask = new Task();
+        matchingTask.setTitle("In progress task");
+        matchingTask.setProject(project);
+        matchingTask.addAssignee(assignee);
+        matchingTask.changeStatus(TaskStatus.IN_PROGRESS);
+
+        Task nonMatchingTask = new Task();
+        nonMatchingTask.setTitle("Todo task");
+        nonMatchingTask.setProject(null);
+
+        TaskResponse expectedResponse = new TaskResponse(
+                UUID.randomUUID(),
+                "In progress task",
+                null,
+                TaskStatus.IN_PROGRESS,
+                projectId,
+                Set.of(assigneeId)
+        );
+
+        when(taskRepository.findAll(ArgumentMatchers.<Specification<Task>>any()))
+                .thenReturn(List.of(matchingTask));
+        when(taskMapper.toResponse(matchingTask)).thenReturn(expectedResponse);
+
+        // Act
+        List<TaskResponse> actualResponses = taskService.findAll(TaskStatus.IN_PROGRESS, null);
+
+        // Assert
+        assertEquals(List.of(expectedResponse), actualResponses);
+
+        verify(taskRepository).findAll(ArgumentMatchers.<Specification<Task>>any());
+        verify(taskMapper).toResponse(matchingTask);
+        verifyNoMoreInteractions(taskMapper);
+    }
+
+    @Test
+    void findAll_withProjectIdFilter_shouldReturnTasksFromMatchingProject() {
+        // Arrange
+        UUID projectId = UUID.randomUUID();
+        UUID assigneeId = UUID.randomUUID();
+
+        Project matchingProject = new Project();
+        matchingProject.setId(projectId);
+        matchingProject.setName("Matching project");
+
+        Project otherProject = new Project();
+        otherProject.setId(UUID.randomUUID());
+        otherProject.setName("Other project");
+
+        User assignee = new User();
+        assignee.setId(assigneeId);
+
+        Task matchingTask = new Task();
+        matchingTask.setTitle("Task from target project");
+        matchingTask.setProject(matchingProject);
+        matchingTask.addAssignee(assignee);
+
+        Task nonMatchingTask = new Task();
+        nonMatchingTask.setTitle("Task from other project");
+        nonMatchingTask.setProject(otherProject);
+
+        TaskResponse expectedResponse = new TaskResponse(
+                UUID.randomUUID(),
+                "Task from target project",
+                null,
+                TaskStatus.TODO,
+                projectId,
+                Set.of(assigneeId)
+        );
+
+        when(taskRepository.findAll(ArgumentMatchers.<Specification<Task>>any()))
+                .thenReturn(List.of(matchingTask));
+        when(taskMapper.toResponse(matchingTask)).thenReturn(expectedResponse);
+
+        // Act
+        List<TaskResponse> actualResponses = taskService.findAll(null, projectId);
+
+        // Assert
+        assertEquals(List.of(expectedResponse), actualResponses);
+
+        verify(taskRepository).findAll(ArgumentMatchers.<Specification<Task>>any());
+        verify(taskMapper).toResponse(matchingTask);
+        verifyNoMoreInteractions(taskMapper);
+    }
+
+    @Test
+    void findAll_withStatusAndProjectIdFilters_shouldReturnMatchingTasks() {
+        // Arrange
+        UUID targetProjectId = UUID.randomUUID();
+        UUID otherProjectId = UUID.randomUUID();
+        UUID assigneeId = UUID.randomUUID();
+
+        Project targetProject = new Project();
+        targetProject.setId(targetProjectId);
+        targetProject.setName("Target project");
+
+        Project otherProject = new Project();
+        otherProject.setId(otherProjectId);
+        otherProject.setName("Other project");
+
+        User assignee = new User();
+        assignee.setId(assigneeId);
+
+        Task matchingTask = new Task();
+        matchingTask.setTitle("Matching task");
+        matchingTask.setProject(targetProject);
+        matchingTask.addAssignee(assignee);
+        matchingTask.changeStatus(TaskStatus.IN_PROGRESS);
+
+        Task wrongProjectTask = new Task();
+        wrongProjectTask.setTitle("In progress in other project");
+        wrongProjectTask.setProject(otherProject);
+        wrongProjectTask.changeStatus(TaskStatus.IN_PROGRESS);
+
+        Task wrongStatusTask = new Task();
+        wrongStatusTask.setTitle("Todo in target project");
+        wrongStatusTask.setProject(targetProject);
+
+        Task nonMatchingTask = new Task();
+        nonMatchingTask.setTitle("Todo in other project");
+        nonMatchingTask.setProject(otherProject);
+
+        TaskResponse expectedResponse = new TaskResponse(
+                UUID.randomUUID(),
+                "Matching task",
+                null,
+                TaskStatus.IN_PROGRESS,
+                targetProjectId,
+                Set.of(assigneeId)
+        );
+
+        when(taskRepository.findAll(ArgumentMatchers.<Specification<Task>>any()))
+                .thenReturn(List.of(matchingTask));
+        when(taskMapper.toResponse(matchingTask)).thenReturn(expectedResponse);
+
+        // Act
+        List<TaskResponse> actualResponses =
+                taskService.findAll(TaskStatus.IN_PROGRESS, targetProjectId);
+
+        // Assert
+        assertEquals(List.of(expectedResponse), actualResponses);
+
+        verify(taskRepository).findAll(ArgumentMatchers.<Specification<Task>>any());
+        verify(taskMapper).toResponse(matchingTask);
+        verifyNoMoreInteractions(taskMapper);
+    }
+
 }
